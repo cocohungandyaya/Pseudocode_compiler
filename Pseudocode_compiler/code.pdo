@@ -1,0 +1,7 @@
+Output "what is your name?"
+Input x
+Output "hi",x,"nice to meet you!"
+Output "what is your age?"
+Input p
+Output "Oh,so",x,"you are",p,"years old huh"
+Output "x"
