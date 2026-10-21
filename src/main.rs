@@ -123,7 +123,7 @@ fn main(){
 }
 fn expression(exp:&String,expln:&Vec<String>,explv:&Vec<var>,line:usize)->String{
 	/*let explist:Vec<_>=["(",")","+","-","*","/","=","<=",">=",">","<","<>","!=","AND","OR","NOT",","];
-	let rexplist:Vec<_>=["⁊","℈","ℷ","⌼","⎈","␢","⟡","⟬","⟭","⭃","Ɒ","⳾","⸘","⹂","⺲","⻢","⽟"];
+	let rexplist:Vec<_>=["⁊","℈","ℷ","⌼","⎈","␢","⟡","⟬","⟭","⭃","Ɒ","⳾","⸘","⹂","␟","¤","‽"];
 	let mut xemp:String=String::new();
 	let mut rpn:Vec<String>=Vec::new();
 	let mut rpv:Vec<String>=Vec::new();
