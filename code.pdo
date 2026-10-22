@@ -7,3 +7,4 @@ Output "Oh,so",x,"you are",p,"years old huh"
 Output "x value now:",x
 Input x
 Output "new value of x:",x
+Output "newvalue?,x
