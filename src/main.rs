@@ -14,9 +14,7 @@ struct code{
 	list_varname:Vec<String>,
 	list_varvalue:Vec<var>,
 	code_list:Vec<String>,
-	original_code:String,
 	current_line:usize,
-	dimension:i32,
 }
 trait core{
 	fn run(&self);
@@ -25,7 +23,7 @@ trait core{
 	fn check_list(&self,param:String)->bool;
 	fn get_list_ni(&self,param:String)->(String,Vec<usize>);
 	fn input(&self,name:String);
-	fn output(&self);//missing
+	fn output(&self);
 	fn trans(&self,value:String)->var;
 	fn revtrans(&self,value:var)->String;
 	fn sl_change(&self,index:Vec<usize>,list:String,value:String)->String;
@@ -33,8 +31,9 @@ trait core{
 	fn expression(&self,param:String)->String;//missing
 	fn maths(&self,param:String)->String;//missing
 	fn condition(&self,param:String)->String;//missing
-	fn assign(&self,param:String);//missing
-	
+	fn modulerunner(&self,param:String)->String;
+	fn assign(&self);
+	fn ttsj(&self,txt:String)->String;
 }
 impl core for code{
 	fn run(&self){
@@ -44,6 +43,8 @@ impl core for code{
 				self.input(String=cld.split("Input ").collect::<Vec<_>>().join(""));
 			}else if cld.contains("Output "){
 				self.output();
+			}else if cld.contains("<-"){
+				self.assign();
 			}
 			self.current_line+=1;
 		}
@@ -53,13 +54,10 @@ impl core for code{
 		let mut ibk:bool=false;
 		let mut iibk:bool=false;
 		for i in param.split("").collect::Vec<_>>(){
-			if i=="\"" && !iibk{
-				ibk=!ibk;
-			}else if i=="\'" && !ibk{
-				iibk=!iibk;
-			}else if !(iibk&&ibk){
-				temp.push_str(i.as_str());
-			}
+			if i=="\"" && !iibk{ibk=!ibk;}
+			else if i=="\'" && !ibk{iibk=!iibk;}
+			else if !(iibk&&ibk){temp.push_str(i.as_str());}
+			else{tmep.push_str(" ");}
 		}
 		temp
 	}
@@ -97,24 +95,29 @@ impl core for code{
 				ibk=!ibk;
 			}else if i=="\'" && !ibk{
 				iibk=!iibk;
-			}else if !(iibk&&ibk){
+			}else if !(iibk||ibk){
 				temp.push_str(i.as_str());
 			}
 		}
 		if temp.contains("[")&&temp.contains("]")&&(temp.iter().filter(|&x|*x=="[").count()==temp.iter().filter(|&x|*x=="]").count()){true}else{false}
 	}
 	fn get_list_ni(&self,param:String)->(String,Vec<usize>){
-		let mut temp=param.split("[").collect::<Vec<_>>().join("]");
-		temp=temp.split("]").collect::<Vec<_>>().map(|x|x=x.trim().to_string());
+		let mut temp:String=String::new();
 		let mut id:Vec<usize>=Vec::new();
-		let mut index=temp[1].split(",").collect::<Vec<_>>();
-		for i in index{
-			match i.parse::<usize>(){
-				Ok(num)=>{id.push(num);},
-				Err(e)=>{eprint!("TypeError,please use integer,Error:line{}",self.current_line);return}
+		if check_list{
+			temp=param.split("[").collect::<Vec<_>>().join("]");
+			let mut temp_list=temp.split("]").collect::<Vec<_>>().map(|x|x=x.trim().to_string());
+			let mut index=temp_list[1].split(",").collect::<Vec<_>>();
+			for i in index{
+				match i.parse::<usize>(){
+					Ok(num)=>{id.push(num);},
+					Err(e)=>{eprint!("TypeError,please use integer,Error:line{}",self.current_line);return}
+				}
 			}
+			temp=temp_list[0];
 		}
-		(temp[0],id)
+		else{temp=param;}	
+		(temp,id)
 	}
 	fn trans(&self,value:String)->var{
 		let mut temp:String=String::new();
@@ -199,7 +202,7 @@ impl core for code{
 		temp.join("")
 	}
 	fn get_out(&self,param:(String,Vec<usize>))->var{
-		let mut temp:var=var::int(1);
+		let mut temp:var;
 		if param.1.is_empty(){temp=self.list_varvalue[self.list_varname.iter().position(|x|*x==param.0)];}
 		else if param.0.is_empty(){eprint!("Missing Variable name bruh,Error:line{}",self.current_line);return}
 		else{
@@ -215,7 +218,73 @@ impl core for code{
 		}
 		temp
 	}
-	fn output
+	fn assign(&self){
+		let temp=&self.code_list[&self.current_line].split("<-").collect:<Vec<_>>();
+		if temp.len()!=2{eprint!("idk what happen but just check on your assign value bro,Error:line{}",&self.current_line;return}
+		else{self.writein(temp[0].to_string(),temp[1].to_string());}
+	}
+	fn output(&self){
+		let mut temp:String=self.code_list[self.current_line].split("Output ").collect::<Vec<_>>().join("");
+		let mut temp_list=self.detect(temp.clone()).split(",").collect::<Vec<_>>();
+		for i in 0..temp_list.len(){
+			let replace:String=temp[i].to_string.clone();
+			temp=temp.split(replace).collect::<Vec<_>>().join(&self.modulerunner(temp_list[i].to_string().clone()));
+			
+		}
+		temp=self.ttsj(temp.clone());
+		println!("{}"temp);
+		io::stdout().flush().unwrap();
+	}
+	fn ttsj(&self,txt:String)->String{
+		let mut ibk:bool=false;
+		let mut iibk:bool=false;
+		let mut temp:String=String::new();
+		for i in txt.split("").collect::<Vec<_>>(){
+			if i=="\"" && !(iibk){ibk= !ibk;}
+			else if i=="\'" && !(ibk){iibk= !iibk}
+			else if i =="," && !(iibk||ibk){temp.push_str(i.as_str());}
+		}
+		temp
+	}
+	fn modulerunner(&self,param:String)->String{
+		let mut temp:String=String::new();
+		let mut inlooptemp:String=String::new();
+		let mut bkn:i32=0;
+		let tbk:i32=0;
+		let mut ibk:bool=false;
+		let mut iibk:bool=false;
+		for i in param.split("").collect::<Vec<_>>(){
+			if i=="\"" && !(iibk){ibk= !ibk;inlooptemp.push_str(i.as_str());}
+			else if i=="\'" && !(ibk){iibk= !iibk;inlooptemp.push_str(i.as_str());}
+			else if !(iibk||ibk){
+				if i=="("{bkn+=1;}
+				else if i==")"{bkn-=1}
+				if bkn>tbk{tbk=bkn}
+				if bkn>0{
+					if (i != "(" && i != ")") && bkn==1{inlooptemp.push_str(i.as_str());}
+					else {inlooptemp.push_str(i.as_str());}
+				}
+			}
+		}
+		temp=self.detect(inlooptemp.clone()).split(" ").collect::<Vec<_>>();
+		if temp.contains("(")&&temp.contains(")"){
+			if temp.iter().filter(|&x|*x=="(").count()==temp.iter().filter(|&x|*x==")").count(){temp=self.modulerunner(inlooptemp.clone());}
+			else{eprint!("the number of \"(\" != \")\",Error:line{}",self.current_line);return}
+		}
+		else{
+			temp=self.condition(self.expression(self.maths(inlooptemp.clone())));
+			if temp==inlooptemp{
+				if temp==""{eprint!("emmm it is...Empty...?Error,line:{}",self.current_line());return}
+				else{
+					if self.list_varname.contains(self.get_list_ni(temp.clone()).0){
+						temp=self.revtrans(self.get_out(self.get_list_ni(temp.clone())));
+					}
+					else{eprint!("Variable name not exist,Error:line{}",self.current_line);return}
+				}
+			}
+		}
+		temp
+	}
 }
 fn main(){
 	let mut list_varname:Vec<String>=Vec::new();
