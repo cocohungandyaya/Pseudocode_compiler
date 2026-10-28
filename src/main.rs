@@ -29,14 +29,14 @@ trait core{
 	fn revtrans(&self,value:var)->String;
 	fn sl_change(&self,index:Vec<usize>,list:String,value:String)->String;
 	fn get_out(&self,param:(String,Vec<usize>))->var;
-	fn expression(&self,param:String)->String;//missing
+	fn expression(&self,param:String)->String;
 	fn maths(&self,param:String)->String;
 	fn condition(&self,param:String)->String;//missing
 	fn modulerunner(&self,param:String)->String;
 	fn assign(&self);
 	fn ttsj(&self,txt:String)->String;
-	fn separater(&self,ot:String,param:String,replace:String)->String;//missing
-	fn lvsep(&self,ot:String,param:String)->Vec<String>;//missing
+	fn separater(&self,ot:String,param:String,replace:String)->String;
+	fn lvsep(&self,ot:String,param:String)->Vec<String>;
 }
 impl core for code{
 	fn detect(&self,param:String)->String{
@@ -47,7 +47,7 @@ impl core for code{
 			if i=="\"" && !iibk{ibk=!ibk;}
 			else if i=="\'" && !ibk{iibk=!iibk;}
 			else if !(iibk&&ibk){temp.push_str(i.as_str());}
-			else{tmep.push_str(" ");}
+			else{temp.push_str(" ");}
 		}
 		temp
 	}
@@ -390,7 +390,108 @@ impl core for code{
 				}
 			}
 		}
-		temp_list.join(" ")
+		temp_list.join("")
+	}
+	fn expression(&self,param:String)->String{
+		let mut temp:String=param.clone();
+		let non_expression:Vec<String>=vec!["%","//","**","+","-","*","/","AND","OR","NOT"].map(|x|x=x.to_string());
+		let expressions:Vec<String>=vec!["<=",">=","<>","!=",">","<","="].map(|x|x=x.to_string());
+		for i in non_expression{
+			temp=self.separater(temp.clone(),i.clone(),format!(" {} ",i.clone()));
+		}
+		for i in expressions{
+			temp=self.separater(temp.clone(),i.clone(),format!(" {} ",i.clone()));
+		}
+		let mut temp_list:Vec<String>=self.lvsep(temp.clone()," ".to_string());
+		let mut done:bool=true;
+		while done{
+			for i in expressions{
+				if !temp_list.contains(i){done= !done;break;}
+			}
+			for i in 0..temp_list.len(){
+				if temp_list[i]=="<=" || temp_list[i]==">=" || temp_list[i]=="<>" || temp_list[i]=="!=" || temp_list[i]==">" || temp_list[i]=="<" || temp_list[i]=="="{
+					if i>0 && i+1<temp_list.len(){
+						if self.list_varname.contains(temp_list[i-1]){
+							temp_list[i-1]=self.revtrans(self.get_out(self.get_list_ni(temp_list[i-1].clone())));
+							break;
+						}
+						if self.list_varname.contains(temp_list[i+1]){
+							temp_list[i-1]=self.revtrans(self.get_out(self.get_list_ni(temp_list[i+1].clone())));
+							break;
+						}
+						let mut x1:var=self.trans(temp_list[i-1].clone());
+						let mut x2:var=self.trans(temp_list[i+1].clone());
+						let mut result:String=String::new();
+						if temp_list[i]==">="{if x1>=x2 {result="True";}else{result="False";}}
+						else if temp_list[i]=="<="{if x1<=x2 {result="True";}else{result="False";}}
+						else if temp_list[i]=="<>"||temp_list[i]=="!="{result="True";}else{result="False";}}
+						else if temp_list[i]==">"{if x1>x2 {result="True";}else{result="False";}}
+						else if temp_list[i]=="<"{if x1<x2 {result="True";}else{result="False";}}
+						else if temp_list[i]=="="{if x1==x2 {result="True";}else{result="False";}}
+						else {eprint!("hmmm...i suppose this error wont happen,but if it does,please report to the author,Error:line{}",self.current_line);return}
+						temp_list[i]=result.clone();
+						temp_list.remove(i-1);
+						temp_list.remove(i+1);
+						break;
+					}
+				}
+			}
+		}
+		temp_list.join("")
+	}
+	fn separater(&self,ot:String,param:String,replace:String)->String{
+		let mut temp_list:Vec<String>=Vec::new();
+		let mut temp:String=String::new();
+		let mut ibk:bool=false;
+		let mut iibk:bool=false;
+		let ottemp=ot.split("").collect::Vec<_>>();
+		for i in 0..ottemp.len(){
+			if ottemp[i]=="\"" && !iibk{ibk=!ibk;}
+			else if ottemp[i]=="\'" && !ibk{iibk=!iibk;}
+			i+1!=ottemp.len()
+			if ottemp[i]=="\"" && ibk && !temp.is_empty(){
+				temp_list.push(temp.split(param.clone()).collect::<Vec<_>>().join(replace.clone()));
+				temp="\"".to_string();
+			}
+			else if ottemp[i]=="\'" && iibk && !temp.is_empty(){
+				temp_list.push(temp.split(param.clone()).collect::<Vec<_>>().join(replace.clone()));
+				temp="\'".to_string();
+			}
+			else if ottemp[i]=="\'" && !iibk{
+				temp.push_str("\'");
+				temp_list.push(temp.clone());
+				temp=String::new();
+			}
+			else if ottemp[i]=="\"" && !ibk{
+				temp.push_str("\"");
+				temp_list.push(temp.clone());
+				temp=String::new();
+			}
+			else if i+1==ottemp.len() && (iibk||ibk){eprint!("missing closing Quote,Error:line{}",self.current_line);return}
+			else if i+1==ottemp.len(){
+				temp.push_str(ottemp[i].as_str());
+				temp_list.push(temp.split(param.clone()).collect::<Vec<_>>().join(replace.clone()));
+			}
+			else{temp.push_str(ottemp[i].as_str());}
+		}
+		temp_list.join("")
+	}
+	fn lvsep(&self,ot:String,param:String)->Vec<String>{
+		let mut temp_list:Vec<String>=Vec::new();
+		let mut temp:String=String::new();
+		let mut ibk:bool=false;
+		let mut iibk:bool=false;
+		let ottemp=ot.split("").collect::Vec<_>>();
+		for i in 0..ottemp.len(){
+			if ottemp[i]=="\"" && !iibk{ibk=!ibk;}
+			else if ottemp[i]=="\'" && !ibk{iibk=!iibk;}
+			if ottemp[i]=="\"" || ottemp[i]=="\'" || (iibk||ibk){temp.push_str(ottemp[i].as_str());}
+			else if ottemp[i]==param{temp_list.push(temp);temp=String::new()}
+			else if i+1==ottemp.len() && (iibk||ibk){eprint!("missing closing Quote,Error:line{}",self.current_line);return}
+			else if else if i+1==ottemp.len() {temp.push_str(ottemp[i].as_str());temp_list.push(temp.as_str());}
+			else{temp.push_str(ottemp[i].as_str;}
+		}
+		temp_list
 	}
 }
 fn main(){
