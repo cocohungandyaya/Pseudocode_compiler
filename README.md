@@ -4,4 +4,4 @@ still building,not quite usable,only have input and output but i am already addi
 
 current progress:input,output,assign,maths module done
 
-and yet i build it with 0 external crate,only use build in std crate
+and yet i build it with 0 external crate,only use built in std crate
