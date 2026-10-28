@@ -17,7 +17,8 @@ struct code{
 	current_line:usize,
 }
 trait core{
-	fn run(&self);
+	fn run(&self);//missing
+	fn runner(&self,line:String);//missing
 	fn detect(&self)->String;
 	fn writein(&self,name:String,value:String);
 	fn check_list(&self,param:String)->bool;
@@ -29,26 +30,15 @@ trait core{
 	fn sl_change(&self,index:Vec<usize>,list:String,value:String)->String;
 	fn get_out(&self,param:(String,Vec<usize>))->var;
 	fn expression(&self,param:String)->String;//missing
-	fn maths(&self,param:String)->String;//missing
+	fn maths(&self,param:String)->String;
 	fn condition(&self,param:String)->String;//missing
 	fn modulerunner(&self,param:String)->String;
 	fn assign(&self);
 	fn ttsj(&self,txt:String)->String;
+	fn separater(&self,ot:String,param:String,replace:String)->String;//missing
+	fn lvsep(&self,ot:String,param:String)->Vec<String>;//missing
 }
 impl core for code{
-	fn run(&self){
-		while self.current_line < self.code_list.len(){
-			let cld:String=self.detect(self.code_list[self.current_line]);
-			if cld.contains("Input "){
-				self.input(String=cld.split("Input ").collect::<Vec<_>>().join(""));
-			}else if cld.contains("Output "){
-				self.output();
-			}else if cld.contains("<-"){
-				self.assign();
-			}
-			self.current_line+=1;
-		}
-	}
 	fn detect(&self,param:String)->String{
 		let mut temp:String=String::new();
 		let mut ibk:bool=false;
@@ -180,7 +170,8 @@ impl core for code{
 				temp=tt;
 				if temp.split("").collect::<Vec<_>>()[0]=="\""{
 					temp=temp.split("\"").collect::<Vec<_>>().join("");
-				}else{temp=temp.split("\'").collect::<Vec<_>>().join("");}
+				}
+				else if temp.split("").collect::<Vec<_>>()[0]=="\'"{temp=temp.split("\'").collect::<Vec<_>>().join("");}
 			},
 			_=>{}
 		}
@@ -221,7 +212,7 @@ impl core for code{
 	fn assign(&self){
 		let temp=&self.code_list[&self.current_line].split("<-").collect:<Vec<_>>();
 		if temp.len()!=2{eprint!("idk what happen but just check on your assign value bro,Error:line{}",&self.current_line;return}
-		else{self.writein(temp[0].to_string(),temp[1].to_string());}
+		else{self.writein(temp[0].to_string(),self.modulerunner(temp[1].to_string()));}
 	}
 	fn output(&self){
 		let mut temp:String=self.code_list[self.current_line].split("Output ").collect::<Vec<_>>().join("");
@@ -250,7 +241,7 @@ impl core for code{
 		let mut temp:String=String::new();
 		let mut inlooptemp:String=String::new();
 		let mut bkn:i32=0;
-		let tbk:i32=0;
+		let mut tbk:i32=0;
 		let mut ibk:bool=false;
 		let mut iibk:bool=false;
 		for i in param.split("").collect::<Vec<_>>(){
@@ -274,7 +265,7 @@ impl core for code{
 		else{
 			temp=self.condition(self.expression(self.maths(inlooptemp.clone())));
 			if temp==inlooptemp{
-				if temp==""{eprint!("emmm it is...Empty...?Error,line:{}",self.current_line());return}
+				if temp.trim()==""{eprint!("emmm it is...Empty...?Error,line:{}",self.current_line());return}
 				else{
 					if self.list_varname.contains(self.get_list_ni(temp.clone()).0){
 						temp=self.revtrans(self.get_out(self.get_list_ni(temp.clone())));
@@ -285,12 +276,124 @@ impl core for code{
 		}
 		temp
 	}
+	fn maths(&self,param:String)->String{
+		let mut temp:String=param.clone()
+		let non_maths:Vec<String>=vec!["=","<=",">=","<>","!=",">","<","AND","OR","NOT"].map(|x|x=x.to_string());
+		let math:Vec<String>=vec!["%","//","**","+","-","*","/"].map(|x|x=x.to_string());
+		for i in non_maths{
+			temp=self.separater(temp.clone(),i.clone(),format!(" {} ",i.clone()));
+		}
+		for i in math{
+			temp=self.separater(temp.clone(),i.clone(),format!(" {} ",i.clone()));
+		}
+		let mut temp_list:Vec<String>=self.lvsep(temp.clone()," ".to_string());
+		while temp_list.contains("**"){
+			for i in temp_list.len()..0{
+				if temp_list[i]=="**" {
+					if i>0 && i+1<temp_list.len(){
+						let mut isn:bool=false;
+						for j in temp_list[i-1].split("").collect::<Vec<_>>(){
+							if "1234567890.".contains(j){isn=true;}
+						}
+						if !isn{
+							if self.detect(temp_list[i-1].clone())==temp_list[i-1]{eprint!("Bro,you are not suppose to use string stuff to do calculation,try use Integer or Float,Error:line{}",self.current_line()}
+							else{temp_list[i-1]=self.revtrans(self.get_out(self.get_list_ni(temp_list[i-1].clone())));break;}
+						}
+						isn=false;
+						for j in temp_list[i+1].split("").collect::<Vec<_>>(){
+							if "1234567890.".contains(j){isn=true;}
+						}
+						if !isn{
+							if self.detect(temp_list[i+1].clone())==temp_list[i+1]{eprint!("Bro,you are not suppose to use string stuff to do calculation,try use Integer or Float,Error:line{}",self.current_line()}
+							else{temp_list[i+1]=self.revtrans(self.get_out(self.get_list_ni(temp_list[i+1].clone())));break;}
+						}
+						let mut x1:f64=0.0;
+						let mut x2:f64=0.0;
+						match self.trans(temp_list[i-1].clone()){
+							var::int(ii)=>{x1=ii as f64;},
+							var::float(ff)=>{x1=ff;},
+							_=>{eprint!("Bro your variable isnt Integer or Float,Error:line{}",self.current_line);return}
+						}
+						match self.trans(temp_list[i+1].clone()){
+							var::int(ii)=>{x2=ii as f64;},
+							var::float(ff)=>{x2=ff;},
+							_=>{eprint!("Bro your variable isnt Integer or Float,Error:line{}",self.current_line);return}
+						}
+						temp_list.remove(i-1);
+						temp_list.remove(i+1);
+						match self.trans(x1.pow(x2).to_string()){
+							var::int(ii)=>{temp_list[i]=ii.to_string()},
+							var::float(ff)=>{temp_list[i]=ff.to_string()},
+							_=>{eprint!("Emm,idk but seems have an error,suppose here should ended up with numbers,Error:line{}",self.current_line);return}
+						}
+						break;
+					}
+				}
+			}
+		}
+		let mut done:bool=true;
+		while done{
+			for i in math{
+				if !temp_list.contains(i){done= !done;break;}
+			}
+			for i in 0..temp_list.len(){
+				if temp_list[i]=="%" || temp_list[i]=="//" || temp_list[i]=="+" || temp_list[i]=="-" || temp_list[i]=="*" || temp_list[i]=="/"{
+					if i>0 && i+1<temp_list.len(){
+						let mut isn:bool=false;
+						for j in temp_list[i-1].split("").collect::<Vec<_>>(){
+							if "1234567890.".contains(j){isn=true;}
+						}
+						if !isn{
+							if self.detect(temp_list[i-1].clone())==temp_list[i-1]{eprint!("Bro,you are not suppose to use string stuff to do calculation,try use Integer or Float,Error:line{}",self.current_line()}
+							else{temp_list[i-1]=self.revtrans(self.get_out(self.get_list_ni(temp_list[i-1].clone())));break;}
+						}
+						isn=false;
+						for j in temp_list[i+1].split("").collect::<Vec<_>>(){
+							if "1234567890.".contains(j){isn=true;}
+						}
+						if !isn{
+							if self.detect(temp_list[i+1].clone())==temp_list[i+1]{eprint!("Bro,you are not suppose to use string stuff to do calculation,try use Integer or Float,Error:line{}",self.current_line()}
+							else{temp_list[i+1]=self.revtrans(self.get_out(self.get_list_ni(temp_list[i+1].clone())));break;}
+						}
+						let mut x1:f64=0.0;
+						let mut x2:f64=0.0;
+						match self.trans(temp_list[i-1].clone()){
+							var::int(ii)=>{x1=ii as f64;},
+							var::float(ff)=>{x1=ff;},
+							_=>{eprint!("Bro your variable isnt Integer or Float,Error:line{}",self.current_line);return}
+						}
+						match self.trans(temp_list[i+1].clone()){
+							var::int(ii)=>{x2=ii as f64;},
+							var::float(ff)=>{x2=ff;},
+							_=>{eprint!("Bro your variable isnt Integer or Float,Error:line{}",self.current_line);return}
+						}
+						let mut result:f64=0.0;
+						if temp_list[i]=="%"{result=x1%x2;}
+						else if temp_list[i]=="//"{result=(x1/x2).floor();}
+						else if temp_list[i]=="+"{result=x1+x2;}
+						else if temp_list[i]=="-"{result=x1-x2;}
+						else if temp_list[i]=="*"{result=x1*x2;}
+						else if temp_list[i]=="/"{result=x1/x2;}
+						else {eprint!("hmmm...i suppose this error wont happen,but if it does,please report to the author,Error:line{}",self.current_line);return}
+						match self.trans(result.to_string()){
+							var::int(ii)=>{temp_list[i]=ii.to_string()},
+							var::float(ff)=>{temp_list[i]=ff.to_string()},
+							_=>{eprint!("Emm,idk but seems have an error,suppose here should ended up with numbers,Error:line{}",self.current_line);return}
+						}
+						temp_list.remove(i-1);
+						temp_list.remove(i+1);
+						break;
+					}
+				}
+			}
+		}
+		temp_list.join(" ")
+	}
 }
 fn main(){
 	let mut list_varname:Vec<String>=Vec::new();
 	let mut list_varvalue:Vec<var>=Vec::new();
-//"(",")","+","-","*","/","=","<=",">=","<>","!=",">","<","AND","OR","NOT"
-//"⁊","℈","ℷ","⌼","⎈","␢","⟡","⟬","⟭","⭃","Ɒ","⳾","⸘","⹂","␟","¤","‽"
+//"(",")","%","//","**","+","-","*","/","=","<=",">=","<>","!=",">","<","AND","OR","NOT"
 	let args:Vec<String>=env::args().collect();
 	if args.len() < 2 {
 		let mut file=File::open(args[1].clone()).unwrap();
