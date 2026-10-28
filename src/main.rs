@@ -117,7 +117,7 @@ impl core for code{
 				match value.parse::<f64>(){
 					Ok(num)=>{temp=var::float(num);},
 					Err(e)=>{
-						match value.parse::<bool>(){
+						match value.to_lowercase().parse::<bool>(){
 							Ok(num)=>{temp=var::boolean(num);},
 							Err(e)=>{
 								let mut list_temp:Vec<var>=Vec::new();
@@ -165,7 +165,10 @@ impl core for code{
 		match value{
 			var::int(ii)=>{temp=ii.to_string();},
 			var::float(ff)=>{temp=ff.to_string();},
-			var::boolean(bb)=>{temp=bb.to_string();},
+			var::boolean(bb)=>{
+				if bb.to_string()=="true"{temp="True";}
+				else {temp="False";}
+			},
 			var::text(tt)=>{
 				temp=tt;
 				if temp.split("").collect::<Vec<_>>()[0]=="\""{
