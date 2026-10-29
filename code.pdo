@@ -1,10 +1,7 @@
-Output "what is your name?"
-Input x
-Output "hi",x,"nice to meet you!"
-Output "what is your age?"
-Input p
-Output "Oh,so",x,"you are",p,"years old huh"
-Output "x value now:",x
-Input x
-Output "new value of x:",x
-Output "newvalue?,x
+Output "3+3",3+3
+Output "so",3+3=6
+x<-"sigma"
+y<-365
+z<-200
+Output "lmao!Sigma!200*365=",z*y
+Output ("sigma"=x)
